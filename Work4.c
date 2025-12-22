@@ -148,6 +148,6 @@ int main() {
     printf("For range 1..%d, maximum attempts needed: %d\n",
         N, (int)(log(N) / log(2)) + 1);
     printf("Time complexity: O(log N)\n");
-
+    //добавить проверку при доходе в диапозоне
     return 0;
 }
