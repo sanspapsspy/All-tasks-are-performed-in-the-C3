@@ -2,22 +2,24 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
+#include <locale.h>
 
-// Function to validate integer input
+// Функция для валидации целочисленного ввода
 int get_valid_integer(int min, int max) {
     char input[100];
     int value;
 
     while (1) {
         if (fgets(input, sizeof(input), stdin) == NULL) {
-            printf("Input error occurred.\n");
+            printf("Произошла ошибка ввода.\n");
             return -1;
         }
 
-        // Remove newline character
+        // Удаляем символ новой строки
         input[strcspn(input, "\n")] = '\0';
 
-        // Check if input contains only digits
+        // Проверяем, содержит ли ввод только цифры
         int valid = 1;
         for (int i = 0; input[i] != '\0'; i++) {
             if (input[i] < '0' || input[i] > '9') {
@@ -27,13 +29,13 @@ int get_valid_integer(int min, int max) {
         }
 
         if (!valid) {
-            printf("Please enter a valid integer between %d and %d: ", min, max);
+            printf("Пожалуйста, введите целое число от %d до %d: ", min, max);
             continue;
         }
 
         value = atoi(input);
         if (value < min || value > max) {
-            printf("Please enter a number between %d and %d: ", min, max);
+            printf("Пожалуйста, введите число от %d до %d: ", min, max);
             continue;
         }
 
@@ -44,110 +46,313 @@ int get_valid_integer(int min, int max) {
 }
 
 int main() {
+    setlocale(LC_ALL, ("Rus"));
     int N, secret_number, guess, attempts = 0;
     int low, high;
-    char strategy_choice;
+    char strategy_choice[3]; // Увеличиваем буфер для чтения ввода
 
     srand(time(NULL));
 
-    printf("=== Number Guessing Game ===\n");
+    printf("=== Игра 'Угадай число' ===\n");
 
-    // Get N from user
-    printf("Enter the maximum number N (1 or greater): ");
+    // Получаем N от пользователя
+    printf("Введите максимальное число N (от 1 и больше): ");
     N = get_valid_integer(1, 1000000);
 
-    // Generate secret number
+    // Генерируем секретное число
     secret_number = rand() % N + 1;
 
-    printf("I'm thinking of a number between 1 and %d.\n", N);
-    printf("Would you like to use efficient strategy? (y/n): ");
+    printf("Я загадал число от 1 до %d.\n", N);
+    printf("Хотите использовать эффективную стратегию? (y/n): ");
 
-    // Get strategy choice
+    // Получаем выбор стратегии
     while (1) {
-        if (fgets(&strategy_choice, 2, stdin) == NULL) {
-            printf("Input error occurred.\n");
+        if (fgets(strategy_choice, sizeof(strategy_choice), stdin) == NULL) {
+            printf("Произошла ошибка ввода.\n");
             return 1;
         }
-        getchar(); // Clear newline
+        // Удаляем символ новой строки, если он есть
+        if (strategy_choice[strlen(strategy_choice) - 1] == '\n') {
+            strategy_choice[strlen(strategy_choice) - 1] = '\0';
+        }
 
-        if (strategy_choice == 'y' || strategy_choice == 'Y' ||
-            strategy_choice == 'n' || strategy_choice == 'N') {
+        if (strategy_choice[0] == 'y' || strategy_choice[0] == 'Y' ||
+            strategy_choice[0] == 'n' || strategy_choice[0] == 'N') {
             break;
         }
-        printf("Please enter 'y' for yes or 'n' for no: ");
+        printf("Пожалуйста, введите 'y' для да или 'n' для нет: ");
     }
 
-    if (strategy_choice == 'y' || strategy_choice == 'Y') {
-        printf("Using binary search strategy for efficient guessing.\n");
-        printf("Think of your number and I'll guess it!\n");
+    if (strategy_choice[0] == 'y' || strategy_choice[0] == 'Y') {
+        printf("Использую стратегию бинарного поиска для эффективного угадывания.\n");
+        printf("Загадайте число, а я попробую его угадать!\n");
+        printf("Инструкции:\n");
+        printf("  - Введите 'c' если моя догадка ПРАВИЛЬНА\n");
+        printf("  - Введите 'l' если ваше число МЕНЬШЕ моей догадки\n");
+        printf("  - Введите 'h' если ваше число БОЛЬШЕ моей догадки\n");
+        printf("  - Введите 'q' чтобы выйти из игры\n\n");
 
         low = 1;
         high = N;
         attempts = 0;
+        int previous_low = 1;
+        int previous_high = N;
+        int game_active = 1; // Флаг активности игры
 
-        while (low <= high) {
+        while (low <= high && game_active) {
             guess = low + (high - low) / 2;
             attempts++;
 
-            printf("My guess #%d: %d\n", attempts, guess);
-            printf("Is it correct? (c), too low? (l), too high? (h): ");
+            printf("\n=== Попытка №%d ===\n", attempts);
+            printf("Текущий диапазон: от %d до %d\n", low, high);
+            printf("Моя догадка: %d\n", guess);
+            printf("Ваш ответ? (c/l/h/q): ");
 
-            char feedback;
+            char feedback[3];
             while (1) {
-                if (fgets(&feedback, 2, stdin) == NULL) {
-                    printf("Input error occurred.\n");
+                if (fgets(feedback, sizeof(feedback), stdin) == NULL) {
+                    printf("Произошла ошибка ввода.\n");
                     return 1;
                 }
-                getchar(); // Clear newline
+                // Удаляем символ новой строки, если он есть
+                if (feedback[strlen(feedback) - 1] == '\n') {
+                    feedback[strlen(feedback) - 1] = '\0';
+                }
 
-                if (feedback == 'c' || feedback == 'C' ||
-                    feedback == 'l' || feedback == 'L' ||
-                    feedback == 'h' || feedback == 'H') {
+                if (feedback[0] == 'c' || feedback[0] == 'C' ||
+                    feedback[0] == 'l' || feedback[0] == 'L' ||
+                    feedback[0] == 'h' || feedback[0] == 'H' ||
+                    feedback[0] == 'q' || feedback[0] == 'Q') {
                     break;
                 }
-                printf("Please enter 'c', 'l', or 'h': ");
+                printf("Пожалуйста, введите 'c', 'l', 'h' или 'q': ");
             }
 
-            if (feedback == 'c' || feedback == 'C') {
-                printf("I guessed your number %d in %d attempts!\n", guess, attempts);
-                break;
+            if (feedback[0] == 'c' || feedback[0] == 'C') {
+                printf("\n🎉 Поздравляю! Я угадал ваше число %d за %d попыток!\n", guess, attempts);
+                game_active = 0;
             }
-            else if (feedback == 'l' || feedback == 'L') {
-                low = guess + 1;
-            }
-            else if (feedback == 'h' || feedback == 'H') {
+            else if (feedback[0] == 'l' || feedback[0] == 'L') {
+                // Сохраняем предыдущие границы для проверки
+                previous_low = low;
+                previous_high = high;
+
+                // Обновляем верхнюю границу
                 high = guess - 1;
+
+                // Проверяем, не вышел ли пользователь за исходный диапазон
+                if (high < 1) {
+                    printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                    printf("   Вы утверждаете, что число меньше 1, но диапазон был от 1 до %d.\n", N);
+                    printf("   Это невозможно! Возвращаемся к предыдущим границам...\n");
+
+                    // Восстанавливаем предыдущие границы
+                    low = previous_low;
+                    high = previous_high;
+                    attempts--; // Не считаем эту попытку
+                    continue;
+                }
+
+                // Проверяем, не слишком ли сильно сузили диапазон
+                if (high < low) {
+                    printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                    printf("   Теперь диапазон пустой: нижняя граница %d, верхняя граница %d\n", low, high);
+                    printf("   Это противоречие! Возвращаемся к предыдущим границам...\n");
+
+                    // Восстанавливаем предыдущие границы
+                    low = previous_low;
+                    high = previous_high;
+                    attempts--; // Не считаем эту попытку
+                    continue;
+                }
+
+                printf("Хорошо, ваше число меньше чем %d. Новый диапазон: от %d до %d\n",
+                    guess, low, high);
             }
+            else if (feedback[0] == 'h' || feedback[0] == 'H') {
+                // Сохраняем предыдущие границы для проверки
+                previous_low = low;
+                previous_high = high;
+
+                // Обновляем нижнюю границу
+                low = guess + 1;
+
+                // Проверяем, не вышел ли пользователь за исходный диапазон
+                if (low > N) {
+                    printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                    printf("   Вы утверждаете, что число больше %d, но диапазон был от 1 до %d.\n", N, N);
+                    printf("   Это невозможно! Возвращаемся к предыдущим границам...\n");
+
+                    // Восстанавливаем предыдущие границы
+                    low = previous_low;
+                    high = previous_high;
+                    attempts--; // Не считаем эту попытку
+                    continue;
+                }
+
+                // Проверяем, не слишком ли сильно сузили диапазон
+                if (low > high) {
+                    printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                    printf("   Теперь диапазон пустой: нижняя граница %d, верхняя граница %d\n", low, high);
+                    printf("   Это противоречие! Возвращаемся к предыдущим границам...\n");
+
+                    // Восстанавливаем предыдущие границы
+                    low = previous_low;
+                    high = previous_high;
+                    attempts--; // Не считаем эту попытку
+                    continue;
+                }
+
+                printf("Хорошо, ваше число больше чем %d. Новый диапазон: от %d до %d\n",
+                    guess, low, high);
+            }
+            else if (feedback[0] == 'q' || feedback[0] == 'Q') {
+                printf("\nИгра завершена. Число было между %d и %d.\n", low, high);
+                game_active = 0;
+            }
+
+            // Дополнительная проверка: если диапазон стал слишком маленьким
+            if ((high - low) < 0 && game_active) {
+                printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                printf("   Диапазон стал отрицательным! Ваши ответы противоречат друг другу.\n");
+                printf("   Начинаем этот этап заново...\n");
+
+                // Возвращаемся к предыдущим границам
+                low = previous_low;
+                high = previous_high;
+                attempts--;
+            }
+
+            // Проверка, если диапазон содержит только одно число
+            if (low == high && game_active) {
+                attempts++;
+                printf("\n=== Финальная попытка №%d ===\n", attempts);
+                printf("В диапазоне осталось только одно число!\n");
+                printf("Ваше число ДОЛЖНО быть: %d\n", low);
+                printf("Это правильное число? (y/n/q): ");
+
+                char final_answer[3];
+                while (1) {
+                    if (fgets(final_answer, sizeof(final_answer), stdin) == NULL) {
+                        printf("Произошла ошибка ввода.\n");
+                        return 1;
+                    }
+                    // Удаляем символ новой строки, если он есть
+                    if (final_answer[strlen(final_answer) - 1] == '\n') {
+                        final_answer[strlen(final_answer) - 1] = '\0';
+                    }
+
+                    if (final_answer[0] == 'y' || final_answer[0] == 'Y' ||
+                        final_answer[0] == 'n' || final_answer[0] == 'N' ||
+                        final_answer[0] == 'q' || final_answer[0] == 'Q') {
+                        break;
+                    }
+                    printf("Пожалуйста, введите 'y', 'n' или 'q': ");
+                }
+
+                if (final_answer[0] == 'y' || final_answer[0] == 'Y') {
+                    printf("\n🎉 Поздравляю! Я угадал ваше число %d за %d попыток!\n", low, attempts);
+                    game_active = 0;
+                }
+                else if (final_answer[0] == 'n' || final_answer[0] == 'N') {
+                    printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                    printf("   Если в диапазоне осталось только число %d, и это не ваше число,\n", low);
+                    printf("   то ваши предыдущие ответы были противоречивыми.\n");
+                    printf("   Игра начинается заново...\n");
+
+                    // Начинаем заново
+                    low = 1;
+                    high = N;
+                    attempts = 0;
+                    previous_low = 1;
+                    previous_high = N;
+                    printf("Новая игра началась. Диапазон: от 1 до %d\n", N);
+                }
+                else if (final_answer[0] == 'q' || final_answer[0] == 'Q') {
+                    printf("\nИгра завершена.\n");
+                    game_active = 0;
+                }
+            }
+        }
+
+        if (low > high && attempts > 0 && game_active) {
+            printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+            printf("   Диапазон поиска стал пустым (нижняя граница %d > верхней границы %d).\n", low, high);
+            printf("   Ваши ответы были противоречивыми. Игра завершена.\n");
         }
     }
     else {
-        printf("Try to guess my number!\n");
+        printf("Попробуйте угадать мое число!\n");
+        printf("Инструкции:\n");
+        printf("  - Я скажу 'LT' если ваша догадка СЛИШКОМ МАЛА\n");
+        printf("  - Я скажу 'GT' если ваша догадка СЛИШКОМ ВЕЛИКА\n");
+        printf("  - Я скажу 'EQ' если вы угадали правильно\n\n");
+
         attempts = 0;
+        int previous_guess = 0;
+        int direction_changes = 0;
+        int guessing_active = 1;
 
         do {
-            printf("Enter your guess: ");
+            printf("Введите вашу догадку (от 1 до %d): ", N);
             guess = get_valid_integer(1, N);
             attempts++;
 
+            // Проверка на противоречивые догадки
+            if (attempts > 1) {
+                if ((previous_guess < secret_number && guess > secret_number && guess > previous_guess) ||
+                    (previous_guess > secret_number && guess < secret_number && guess < previous_guess)) {
+                    direction_changes++;
+
+                    if (direction_changes > 3) {
+                        printf("\n⚠️ Товарищ, вы слишком далеко ушли!\n");
+                        printf("   Вы много раз меняли направление поиска.\n");
+                        printf("   Попробуйте быть более последовательным!\n");
+                    }
+                }
+            }
+            previous_guess = guess;
+
             if (guess < secret_number) {
-                printf("LT\n");
+                printf("LT (слишком мало)\n");
             }
             else if (guess > secret_number) {
-                printf("GT\n");
+                printf("GT (слишком много)\n");
             }
             else {
-                printf("EQ\n");
-                printf("Congratulations! You guessed the number %d in %d attempts!\n",
+                printf("EQ (правильно!)\n");
+                printf("\n🎉 Поздравляю! Вы угадали число %d за %d попыток!\n",
                     secret_number, attempts);
+                guessing_active = 0;
             }
-        } while (guess != secret_number);
+        } while (guessing_active);
     }
 
-    printf("Efficient strategy explanation:\n");
-    printf("Binary search reduces search space by half each time.\n");
-    printf("For range 1..%d, maximum attempts needed: %d\n",
-        N, (int)(log(N) / log(2)) + 1);
-    printf("Time complexity: O(log N)\n");
-    //добавить проверку при доходе в диапозоне
+    printf("\n=== Статистика игры ===\n");
+    printf("Диапазон: от 1 до %d\n", N);
+    printf("Всего попыток: %d\n", attempts);
+
+    if (strategy_choice[0] == 'y' || strategy_choice[0] == 'Y') {
+        printf("Объяснение эффективной стратегии:\n");
+        printf("Бинарный поиск уменьшает пространство поиска вдвое каждый раз.\n");
+        printf("Для диапазона 1..%d, максимально нужно попыток: %d\n",
+            N, (int)(log(N) / log(2)) + 1);
+        printf("Сложность по времени: O(log N)\n");
+    }
+    else {
+        printf("Ваша стратегия: линейный поиск (метод проб и ошибок)\n");
+        printf("Среднее количество попыток при случайном угадывании: ~%d\n", N / 2);
+        printf("Сложность по времени: O(N)\n");
+    }
+
+    printf("\n=== Советы на будущее ===\n");
+    printf("1. Будьте последовательны в своих ответах\n");
+    printf("2. Помните исходный диапазон (от 1 до %d)\n", N);
+    printf("3. Не противоречьте своим предыдущим ответам\n");
+    printf("4. Используйте стратегию бинарного поиска для эффективности\n");
+
+    printf("\nНажмите Enter для выхода...");
+    getchar(); // Ждем нажатия Enter перед выходом
+
     return 0;
 }
