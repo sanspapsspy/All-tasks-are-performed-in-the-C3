@@ -131,7 +131,7 @@ Measurement* read_measurements(const char* filename, int* count, int* invalid_li
     char line[MAX_LINE_LENGTH];
     int line_number = 0;
 
-    measurements = malloc(capacity * sizeof(Measurement));
+    measurements = (Measurement *)malloc(capacity * sizeof(Measurement));
     if (!measurements) {
         fclose(file);
         return NULL;
@@ -170,13 +170,19 @@ Measurement* read_measurements(const char* filename, int* count, int* invalid_li
             // Проверяем, нужно ли увеличить массив
             if (read_count >= capacity) {
                 capacity *= 2;
-                Measurement* temp = realloc(measurements, capacity * sizeof(Measurement));
+                Measurement* temp = (Measurement*)realloc(measurements, capacity * sizeof(Measurement));
                 if (!temp) {
                     free(measurements);
                     fclose(file);
                     return NULL;
                 }
                 measurements = temp;
+            }
+            else {
+                printf("  Строка %d: НЕВЕРНЫЙ ФОРМАТ '%s' - пропущена\n",
+                    line_number, trimmed);
+                (*invalid_lines)++;
+                return 0;
             }
 
             // Сохраняем измерение
@@ -193,11 +199,6 @@ Measurement* read_measurements(const char* filename, int* count, int* invalid_li
                 measurements[read_count].value_in_meters);
 
             read_count++;
-        }
-        else {
-            printf("  Строка %d: НЕВЕРНЫЙ ФОРМАТ '%s' - пропущена\n",
-                line_number, trimmed);
-            (*invalid_lines)++;
         }
     }
 
@@ -545,6 +546,7 @@ int main(int argc, char* argv[]) {
     // ОЧИСТКА ПАМЯТИ И ЗАВЕРШЕНИЕ
     // 
     print_separator("ЗАВЕРШЕНИЕ РАБОТЫ");
+
 
     free(measurements);
 
